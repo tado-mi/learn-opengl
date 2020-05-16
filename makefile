@@ -1,0 +1,25 @@
+# the compiler
+CC = g++
+
+# compiler flags
+# -g	add debugging info to the executable
+# -Wall	turn on (most) compiler warnings
+CFLAGS = -g -Wall
+
+# open gl flags
+GLFLAGS =  -lglut -lGLU -lGL -lGLEW -lm # -lglfw3 -lXinerama -lXcursor
+
+TARGET = blender
+OUTFILE = main.o
+
+all: $(TARGET)
+
+$(TARGET): $(TARGET).cpp
+	$(CC) $(CFLAGS) $(TARGET).cpp -o $(OUTFILE) $(GLFLAGS)
+
+run:
+	./$(OUTFILE)
+
+.PHONY: clean
+clean:
+	$(RM) $(OUTFILE)
