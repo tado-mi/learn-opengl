@@ -7,9 +7,10 @@ CC = g++
 CFLAGS = -g -Wall
 
 # open gl flags
-GLFLAGS =  -lglut -lGLU -lGL -lGLEW -lm # -lglfw3 -lXinerama -lXcursor
+GLFLAGS =  -lglut -lGLU -lGL -lGLEW -lm # -sync -gldebug # -lglfw3 -lXinerama -lXcursor
 
-TARGET = blender
+
+TARGET = main
 OUTFILE = main.o
 
 all: $(TARGET)

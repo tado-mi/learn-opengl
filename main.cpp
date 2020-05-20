@@ -10,44 +10,59 @@ using namespace std;
 #include <GL/glew.h>
 #include <GL/glut.h>
 
+// gl math lib
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 // global variables
-GLuint vbuffer, cbuffer;
+GLuint
+  vbuffer, // vertex buffer
+  cbuffer, // color buffer
+  ibuffer; // index buffer
 
-GLuint shader_vertex_loc, shader_color_loc, factor_loc;
-GLfloat count = 0.0;
-int dir = 1;
+// locations of variables in the shaders
+GLuint
+  vertex_loc,
+  color_loc,
+  matrix_loc;
 
-// colors data togeter with vertices
+// data
 const float x = -0.01;
-const float z = -0.5;
-// 2 triangles
 GLfloat vertices[] = {
 
   // triangle 1
-  -0.5, 0.0 + x, 0.5 + z,
-  0.5, 0.0 + x, 0.5 + z,
-  0.0, -0.5 + x, 0.5 + z,
+  -0.5, 0.0 + x, 0.0,
+  0.5, 0.0 + x, 0.0,
+  0.0, -0.5 + x, 0.0,
 
   // triangle 2
-  -0.5, 0.0 - x, z,
-  0.5, 0.0 - x, z,
-  0.0, 0.5 - x, z
+  -0.5, 0.0 - x, -0.0,
+  0.5, 0.0 - x, -0.0,
+  0.0, 0.5 - x, -0.0
 
 };
 
 GLfloat colors[] = {
 
-  // triangle 1
-  0.2, 0.5, 0.6, // red
-  0.1, 0.8, 0.7, // green
-  0.3, 0.2, 0.9, // blue
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
 
-  // triangle 2
-  0.0, 0.2, 0.5,
-  0.0, 0.3, 0.7,
-  0.4, 0.2, 0.7
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0
 
 };
+
+unsigned int indices[] = {
+
+  0, 1, 2,
+  3, 4, 5
+
+};
+
+// animation variables
+GLfloat count = 0.0;
 
 // initialisation functions:
 bool get_shader(const char* filename, GLuint &handler, GLenum shader) {
@@ -79,7 +94,7 @@ bool get_shader(const char* filename, GLuint &handler, GLenum shader) {
 void init_openGL() {
 
   // set the clear color
-  glClearColor(0.2, 0.2, 0.2, 1.0); // r, g, b, alpha
+  glClearColor(0.0, 0.0, 0.0, 1.0); // r, g, b, alpha
 
   glEnable(GL_DEPTH_TEST);
   // how to compare objects in space: define depth function
@@ -101,10 +116,11 @@ void init_openGL() {
   glUseProgram(p_handler);
 
   // set location variables
-  shader_vertex_loc = glGetAttribLocation(p_handler, "in_vertex");
-  shader_color_loc  = glGetAttribLocation(p_handler, "in_color");
+  vertex_loc = glGetAttribLocation(p_handler, "in_vertex");
+  color_loc  = glGetAttribLocation(p_handler, "in_color");
 
-  factor_loc = glGetUniformLocation(p_handler, "factor");
+  // factor_loc = glGetUniformLocation(p_handler, "factor");
+  matrix_loc = glGetUniformLocation(p_handler, "the_matrix");
 
   // create a buffer
   // for vertices
@@ -119,43 +135,57 @@ void init_openGL() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
+  // for indices
+  glGenBuffers(1, &ibuffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
+
 }
 
 void render() {
 
   int num = 2;
+  glm::mat4 mvp = glm::mat4(
+    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+    glm::vec4(0.0f, 1.0f, 0.0f, count),
+    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+  );
 
   // clear all previous drawings, uses the color set by glClearColor
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glEnableVertexAttribArray(shader_vertex_loc);
-  glEnableVertexAttribArray(shader_color_loc);
+  glEnableVertexAttribArray(vertex_loc);
+  glEnableVertexAttribArray(color_loc);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-    glVertexAttribPointer(shader_vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
-    glVertexAttribPointer(shader_color_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+    glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
-    glUniform1f(factor_loc, count);
+    glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    glDrawArrays(GL_TRIANGLES, 0, num * 3);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
+    glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
 
-  glDisableVertexAttribArray(shader_vertex_loc);
-  glDisableVertexAttribArray(shader_color_loc);
+  glDisableVertexAttribArray(vertex_loc);
+  glDisableVertexAttribArray(color_loc);
 
   // required due to double buffering
   glutSwapBuffers();
 
 }
 
+int dir = 1;
 void idle() {
 
 	glutPostRedisplay();
-  count = count + dir * 0.01;
-  if (count > 2 || count < -2) {
-    dir = -dir;
-  }
+  // count = count + dir * 0.01;
+  // if (count > 1.0 || count < -1.0) {
+  //   dir = -dir;
+  // }
 
 }
 
@@ -166,14 +196,14 @@ void get_perspective(int w, int h) {
   // 2. clear all previously assigned transformations
   glLoadIdentity();
   // 3. create the 3D scene
-  float angle = 60; // view angle from the 'camera'
-  float scale = (float) w / (float) h;
+  float angle = glm::radians(60.0); // view angle from the 'camera'
+  float scale = (float) w / (float) h; // aspect ration
   // visible space ( = calculated area ) will be max - min
   float min = 1.0;  // near clip plane
   float max = 10.0; // far clip plane
   gluPerspective(angle, scale, min, max);
 
-  // back to triangle drawing mode
+  // back to triangle  drawing mode
   glMatrixMode(GL_MODELVIEW);
 
 }

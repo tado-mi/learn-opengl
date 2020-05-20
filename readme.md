@@ -1,3 +1,3 @@
-# Project Sunflower
+# Learn Open GL
 
-Solar Tracking Solar Panel Simulator 
+Just a simple repository I keep around to teach myself OpenGL.
