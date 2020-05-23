@@ -13,56 +13,69 @@ using namespace std;
 // gl math lib
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
+// image loader
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // global variables
 GLuint
   vbuffer, // vertex buffer
-  cbuffer, // color buffer
-  ibuffer; // index buffer
+  // cbuffer, // color buffer
+  ibuffer, // index buffer
+  tbuffer; // texture buffer
 
 // locations of variables in the shaders
 GLuint
   vertex_loc,
-  color_loc,
-  matrix_loc;
+  // color_loc,
+  texture_loc,
+  view_loc,
+  trans_loc; // transformation matrix
+
+GLuint tex;
 
 // data
-const float x = -0.01;
+const float x = -0.3, s = 0.8;
 GLfloat vertices[] = {
 
-  // triangle 1
-  -0.5, 0.0 + x, 0.0,
-  0.5, 0.0 + x, 0.0,
-  0.0, -0.5 + x, 0.0,
-
-  // triangle 2
-  -0.5, 0.0 - x, -0.0,
-  0.5, 0.0 - x, -0.0,
-  0.0, 0.5 - x, -0.0
+  0.0 + x, 0.0 + x, 0.0,
+  0.0 + x, s + x, 0.0,
+  s + x, 0.0 + x, 0.0,
+  s + x, s + x, 0.0
 
 };
 
-GLfloat colors[] = {
+// GLfloat colors[] = {
+//
+//     1.0, 0.0, 0.0,
+//     0.0, 1.0, 0.0,
+//     0.0, 0.0, 1.0,
+//     0.0, 0.0, 1.0,
+//
+// };
 
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
+GLfloat textures[] = {
 
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0
+  0.0, 1.0,
+  1.0, 1.0,
+  0.0, 0.0,
+  1.0, 0.0,
 
 };
 
 unsigned int indices[] = {
 
   0, 1, 2,
-  3, 4, 5
+  3, 1, 2
 
 };
 
 // animation variables
-GLfloat count = 0.0;
+GLfloat count = 0.0, angle = 0.0;
 
 // initialisation functions:
 bool get_shader(const char* filename, GLuint &handler, GLenum shader) {
@@ -90,7 +103,8 @@ bool get_shader(const char* filename, GLuint &handler, GLenum shader) {
   return true;
 
 }
-
+unsigned char *data;
+int width, height;
 void init_openGL() {
 
   // set the clear color
@@ -105,7 +119,7 @@ void init_openGL() {
   // create the shaders
   GLuint vs_handler, fs_handler;
   get_shader("shaders/vertex.glsl", vs_handler, GL_VERTEX_SHADER);
-  get_shader("shaders/frag.glsl", fs_handler, GL_FRAGMENT_SHADER);
+  get_shader("shaders/texture.glsl", fs_handler, GL_FRAGMENT_SHADER);
 
   // link them in a program
   GLuint p_handler = glCreateProgram();
@@ -117,10 +131,11 @@ void init_openGL() {
 
   // set location variables
   vertex_loc = glGetAttribLocation(p_handler, "in_vertex");
-  color_loc  = glGetAttribLocation(p_handler, "in_color");
+  // color_loc  = glGetAttribLocation(p_handler, "in_color");
+  texture_loc  = glGetAttribLocation(p_handler, "in_texture");
 
-  // factor_loc = glGetUniformLocation(p_handler, "factor");
-  matrix_loc = glGetUniformLocation(p_handler, "the_matrix");
+  trans_loc = glGetUniformLocation(p_handler, "trans");
+  view_loc = glGetUniformLocation(p_handler, "view");
 
   // create a buffer
   // for vertices
@@ -130,10 +145,10 @@ void init_openGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
   // for colors
-  glGenBuffers(1, &cbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+  // glGenBuffers(1, &cbuffer);
+  // glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+  // glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
   // for indices
   glGenBuffers(1, &ibuffer);
@@ -141,14 +156,38 @@ void init_openGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
+  // for textures
+  glGenBuffers(1, &tbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(textures), textures, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+  // load texture
+  glGenBuffers(1, &tex);
+  glBindBuffer(GL_TEXTURE_2D, tex);
+
+  const char* img_filename = "texture/peppers.png";
+  data = stbi_load(img_filename, &width, &height, 0, 0);
+  if (!data) {
+      cout << " --- " << img_filename << " failed to load --- " << endl;
+  }
+
 }
 
 void render() {
 
   int num = 2;
-  glm::mat4 mvp = glm::mat4(
-    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+  glm::mat4 trans = glm::mat4(
+    glm::vec4(1.0f, 0.0f, 0.0f, -0.25f),
     glm::vec4(0.0f, 1.0f, 0.0f, count),
+    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+  );
+
+  // GLfloat cos = glm::cos(angle);
+  // GLfloat sin = glm::sin(angle);
+  glm::mat4 view = glm::mat4(
+    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
   );
@@ -157,35 +196,60 @@ void render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glEnableVertexAttribArray(vertex_loc);
-  glEnableVertexAttribArray(color_loc);
+  // glEnableVertexAttribArray(color_loc);
+  glEnableVertexAttribArray(texture_loc);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
     glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
-    glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+    // glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
+    // glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
-    glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+    glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
+    glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+
+    glUniformMatrix4fv(trans_loc, 1, GL_FALSE, glm::value_ptr(trans));
+    glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
+
+    // load the image for texture
+    // wrapping
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    // stbi_image_free(data);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
     glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
 
   glDisableVertexAttribArray(vertex_loc);
-  glDisableVertexAttribArray(color_loc);
+  // glDisableVertexAttribArray(color_loc);
+  glDisableVertexAttribArray(texture_loc);
 
   // required due to double buffering
   glutSwapBuffers();
+
 
 }
 
 int dir = 1;
 void idle() {
 
+  glClearColor(0.0, 0.0, 0.0, 1.0); // r, g, b, alpha
+  glClear(GL_COLOR_BUFFER_BIT);
+
 	glutPostRedisplay();
-  // count = count + dir * 0.01;
-  // if (count > 1.0 || count < -1.0) {
-  //   dir = -dir;
-  // }
+  count = count + dir * 0.01;
+  if (count > 1.0 || count < -1.0) {
+    dir = -dir;
+  }
+  angle = angle + 0.05;
 
 }
 
