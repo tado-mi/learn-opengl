@@ -9,14 +9,15 @@ CFLAGS = -g -Wall
 # open gl flags
 GLFLAGS =  -lglut -lGLU -lGL -lGLEW -lm # -sync -gldebug # -lglfw3 -lXinerama -lXcursor
 
-
 TARGET = main
 OUTFILE = main.o
+
+SRC = src/*.cpp
 
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cpp
-	$(CC) $(CFLAGS) $(TARGET).cpp -o $(OUTFILE) $(GLFLAGS)
+	$(CC) $(CFLAGS) $(SRC) $(TARGET).cpp -o $(OUTFILE) $(GLFLAGS)
 
 run:
 	./$(OUTFILE)

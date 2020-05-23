@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -17,21 +16,19 @@ using namespace std;
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-// image loader
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+// files
+#include "Program.hpp"
+#include "Texture.hpp"
 
 // global variables
 GLuint
   vbuffer, // vertex buffer
-  // cbuffer, // color buffer
   ibuffer, // index buffer
   tbuffer; // texture buffer
 
 // locations of variables in the shaders
 GLuint
   vertex_loc,
-  // color_loc,
   texture_loc,
   view_loc,
   trans_loc; // transformation matrix
@@ -40,7 +37,7 @@ GLuint tex;
 
 // data
 const float x = -0.3, s = 0.8;
-GLfloat vertices[] = {
+const GLfloat vertices[] = {
 
   0.0 + x, 0.0 + x, 0.0,
   0.0 + x, s + x, 0.0,
@@ -49,16 +46,7 @@ GLfloat vertices[] = {
 
 };
 
-// GLfloat colors[] = {
-//
-//     1.0, 0.0, 0.0,
-//     0.0, 1.0, 0.0,
-//     0.0, 0.0, 1.0,
-//     0.0, 0.0, 1.0,
-//
-// };
-
-GLfloat textures[] = {
+const GLfloat textures[] = {
 
   0.0, 1.0,
   1.0, 1.0,
@@ -67,44 +55,19 @@ GLfloat textures[] = {
 
 };
 
-unsigned int indices[] = {
+const unsigned int indices[] = {
 
   0, 1, 2,
   3, 1, 2
 
 };
 
+// images for the texture
+Texture texture_1("texture/pinecone.jpeg");
+
 // animation variables
 GLfloat count = 0.0, angle = 0.0;
 
-// initialisation functions:
-bool get_shader(const char* filename, GLuint &handler, GLenum shader) {
-
-  ifstream is(filename, ios::in | ios::binary | ios::ate);
-	if (!is.is_open()) {
-		cerr << " --- unable to open file ---- " << filename << endl;
-		return false;
-	}
-
-  long size = is.tellg();
-  char* buffer = new char[size + 1];
-
-  is.seekg(0, ios::beg);
-  is.read(buffer, size);
-  is.close();
-
-  buffer[size] = 0;
-
-  handler = glCreateShader(shader);
-  glShaderSource(handler, 1, (const GLchar**) &buffer, NULL);
-  glCompileShader(handler);
-
-  delete [] buffer;
-  return true;
-
-}
-unsigned char *data;
-int width, height;
 void init_openGL() {
 
   // set the clear color
@@ -116,39 +79,30 @@ void init_openGL() {
 
   glewInit();
 
-  // create the shaders
-  GLuint vs_handler, fs_handler;
-  get_shader("shaders/vertex.glsl", vs_handler, GL_VERTEX_SHADER);
-  get_shader("shaders/texture.glsl", fs_handler, GL_FRAGMENT_SHADER);
+  string v = "shaders/vertex.glsl", f = "shaders/texture.glsl";
 
-  // link them in a program
-  GLuint p_handler = glCreateProgram();
-  glAttachShader(p_handler, vs_handler);
-  glAttachShader(p_handler, fs_handler);
-  glLinkProgram(p_handler);
-
-  glUseProgram(p_handler);
+  Program program(v, f);
+  program.use();
 
   // set location variables
-  vertex_loc = glGetAttribLocation(p_handler, "in_vertex");
-  // color_loc  = glGetAttribLocation(p_handler, "in_color");
-  texture_loc  = glGetAttribLocation(p_handler, "in_texture");
+  vertex_loc = program.get_attribute("in_vertex");
+  texture_loc = program.get_attribute("in_texture");
 
-  trans_loc = glGetUniformLocation(p_handler, "trans");
-  view_loc = glGetUniformLocation(p_handler, "view");
+  trans_loc = program.get_uniform("trans");
+  view_loc = program.get_uniform("view");
 
-  // create a buffer
+  // create buffers
   // for vertices
   glGenBuffers(1, &vbuffer);
   glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
-  // for colors
-  // glGenBuffers(1, &cbuffer);
-  // glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
-  // glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
-  // glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+  // for textures
+  glGenBuffers(1, &tbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(textures), textures, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
   // for indices
   glGenBuffers(1, &ibuffer);
@@ -156,20 +110,9 @@ void init_openGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
-  // for textures
-  glGenBuffers(1, &tbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(textures), textures, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
   // load texture
   glGenBuffers(1, &tex);
   glBindBuffer(GL_TEXTURE_2D, tex);
-
-  const char* img_filename = "texture/peppers.png";
-  data = stbi_load(img_filename, &width, &height, 0, 0);
-  if (!data) {
-      cout << " --- " << img_filename << " failed to load --- " << endl;
-  }
 
 }
 
@@ -196,45 +139,26 @@ void render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glEnableVertexAttribArray(vertex_loc);
-  // glEnableVertexAttribArray(color_loc);
+  glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
+  glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+  glUniformMatrix4fv(trans_loc, 1, GL_FALSE, glm::value_ptr(trans));
+  glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
+
   glEnableVertexAttribArray(texture_loc);
+  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
+  glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  texture_1.load();
 
-    // glBindBuffer(GL_ARRAY_BUFFER, cbuffer);
-    // glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
-    glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
-
-    glUniformMatrix4fv(trans_loc, 1, GL_FALSE, glm::value_ptr(trans));
-    glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
-
-    // load the image for texture
-    // wrapping
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    // stbi_image_free(data);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
-    glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
+  glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
 
   glDisableVertexAttribArray(vertex_loc);
-  // glDisableVertexAttribArray(color_loc);
   glDisableVertexAttribArray(texture_loc);
 
   // required due to double buffering
   glutSwapBuffers();
-
 
 }
 
@@ -245,7 +169,7 @@ void idle() {
   glClear(GL_COLOR_BUFFER_BIT);
 
 	glutPostRedisplay();
-  count = count + dir * 0.01;
+  // count = count + dir * 0.01;
   if (count > 1.0 || count < -1.0) {
     dir = -dir;
   }
@@ -273,8 +197,6 @@ void get_perspective(int w, int h) {
 }
 
 void reshape(int w, int h) {
-
-  // cout << "width: " << w << ", height: " << h << "." << endl;
 
   // defines the rectangle in which OpenGL should draw
   glViewport(0, 0, w, h); // (left-bottom corner, right-top corner)
