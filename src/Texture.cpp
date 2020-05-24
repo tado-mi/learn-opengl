@@ -7,16 +7,35 @@
 Texture::Texture(const char* filename) {
 
   name = filename;
-  data = stbi_load(filename, &w, &h, 0, 0);
-  if (!data) {
-      cout << " --- " << filename << " failed to load --- " << endl;
-  }
+  load_data();
 
 }
 
 void Texture::load() {
 
+  if (!data) {
+    load_data();
+  }
+
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
   glGenerateMipmap(GL_TEXTURE_2D);
+  free();
+
+}
+
+void Texture::free() {
+
+  stbi_image_free(data);
+
+}
+
+void Texture::load_data() {
+
+  data = stbi_load(name, &w, &h, 0, 0);
+  if (!data) {
+      cout << " --- " << name << " failed to load --- " << endl;
+  } else if (w % 4 != 0 || h % 4  != 0) {
+    cout << " --- dimensions " << w << " x " << h << " aren\'t a multiple of 4." << endl; 
+  }
 
 }
