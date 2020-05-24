@@ -1,6 +1,6 @@
 #include "../Shader.hpp"
 
-Shader::Shader(string &filename, GLenum which) {
+Shader::Shader(const char* filename, GLenum which) {
 
   ifstream is(filename, ios::in | ios::binary | ios::ate);
   if (!is.is_open()) {

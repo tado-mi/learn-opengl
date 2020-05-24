@@ -1,6 +1,6 @@
 #include "../Program.hpp"
 
-Program::Program(string &vs_file, string &fs_file) {
+Program::Program(const char* vs_file, const char* fs_file) {
 
   Shader vs_shader(vs_file, GL_VERTEX_SHADER);
   GLuint vs = vs_shader.get_handler(); // vertex shader handler

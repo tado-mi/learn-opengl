@@ -20,10 +20,10 @@ class Shader {
 
   public:
     // constructor (
-    //   string &filename: filepath of the shader code
+    //   char* filename: filepath of the shader code
     //   GLenum which: GL_VERTEX_SHADER or GL_FRAGMENT_SHADER
     // )
-    Shader(string &filename, GLenum which);
+    Shader(const char* filename, GLenum which);
     // returns the handler to the given shader
     GLuint get_handler();
 

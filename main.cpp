@@ -76,9 +76,7 @@ void init_openGL() {
 
   glewInit();
 
-  string v = "shaders/vertex.glsl", f = "shaders/texture.glsl";
-
-  Program program(v, f);
+  Program program("shaders/vertex.glsl", "shaders/texture.glsl");
   program.use();
 
   // set location variables

@@ -21,7 +21,7 @@ class Program {
 
   public:
 
-    Program(string &vs_file, string &fs_file);
+    Program(const char* vs_file, const char* fs_file);
     void use();
     GLuint get_attribute(const char* var_name);
     GLuint get_uniform(const char* var_name);
