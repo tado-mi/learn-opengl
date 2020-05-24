@@ -1,5 +1,4 @@
 #include <stdio.h>
-
 #include <iostream>
 
 using namespace std;
@@ -31,9 +30,11 @@ GLuint
   vertex_loc,
   texture_loc,
   view_loc,
-  trans_loc; // transformation matrix
+  trans_loc, // transformation matrix
+  tex0_loc, tex1_loc;
 
 GLuint tex;
+GLuint texs[2];
 
 // data
 const float s = 0.4;
@@ -86,6 +87,9 @@ void init_openGL() {
   trans_loc = program.get_uniform("trans");
   view_loc = program.get_uniform("view");
 
+  tex0_loc = program.get_uniform("tex0");
+  tex1_loc = program.get_uniform("tex1");
+
   // create buffers
   // for vertices
   glGenBuffers(1, &vbuffer);
@@ -105,15 +109,11 @@ void init_openGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
-  // load texture
-  glGenBuffers(1, &tex);
-  glBindBuffer(GL_TEXTURE_2D, tex);
-
-  // images for the texture
-  Texture wallnut("texture/wallnut.jpeg");
-  wallnut.load(GL_TEXTURE0);
-
 }
+
+Texture lemon("texture/lemon.jpg");
+Texture wallnut("texture/wallnut.jpeg");
+
 
 void render() {
 
@@ -148,6 +148,19 @@ void render() {
   glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
   glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
+  glGenTextures(2, texs);
+
+  // // images for the texture
+  glBindTexture(GL_TEXTURE_2D, texs[0]);
+  lemon.load(GL_TEXTURE0);
+  glActiveTexture(GL_TEXTURE0);
+  glUniform1i(tex0_loc, 0);
+  //
+  glBindTexture(GL_TEXTURE_2D, texs[1]);
+  wallnut.load(GL_TEXTURE1);
+  glActiveTexture(GL_TEXTURE1);
+  glUniform1i(tex1_loc, 1);
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
   glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
 
@@ -166,7 +179,7 @@ void idle() {
   glClear(GL_COLOR_BUFFER_BIT);
 
 	glutPostRedisplay();
-  // count = count + dir * 0.01;
+  count = count + dir * 0.01;
   if (count > 1.0 || count < -1.0) {
     dir = -dir;
   }
