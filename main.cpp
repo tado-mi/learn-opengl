@@ -36,22 +36,22 @@ GLuint
 GLuint tex;
 
 // data
-const float x = -0.3, s = 0.8;
+const float s = 0.4;
 const GLfloat vertices[] = {
 
-  0.0 + x, 0.0 + x, 0.0,
-  0.0 + x, s + x, 0.0,
-  s + x, 0.0 + x, 0.0,
-  s + x, s + x, 0.0
+  -s, -s, 0.0,
+  -s,  s, 0.0,
+   s, -s, 0.0,
+   s,  s, 0.0
 
 };
 
 const GLfloat textures[] = {
 
-  0.0, 1.0,
-  1.0, 1.0,
   0.0, 0.0,
   1.0, 0.0,
+  0.0, 1.0,
+  1.0, 1.0
 
 };
 
@@ -61,9 +61,6 @@ const unsigned int indices[] = {
   3, 1, 2
 
 };
-
-// images for the texture
-Texture texture_1("texture/pinecone.jpeg");
 
 // animation variables
 GLfloat count = 0.0, angle = 0.0;
@@ -114,13 +111,17 @@ void init_openGL() {
   glGenBuffers(1, &tex);
   glBindBuffer(GL_TEXTURE_2D, tex);
 
+  // images for the texture
+  Texture wallnut("texture/wallnut.jpeg");
+  wallnut.load(GL_TEXTURE0);
+
 }
 
 void render() {
 
   int num = 2;
   glm::mat4 trans = glm::mat4(
-    glm::vec4(1.0f, 0.0f, 0.0f, -0.25f),
+    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
     glm::vec4(0.0f, 1.0f, 0.0f, count),
     glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
@@ -148,8 +149,6 @@ void render() {
   glEnableVertexAttribArray(texture_loc);
   glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
   glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
-
-  texture_1.load();
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
   glDrawElements(GL_TRIANGLES, num * 3, GL_UNSIGNED_INT, 0);
