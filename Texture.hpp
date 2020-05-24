@@ -22,7 +22,7 @@ class Texture {
   public:
 
     Texture(const char* filename);
-    void load(GLenum en);
+    void load();
 
 
 };

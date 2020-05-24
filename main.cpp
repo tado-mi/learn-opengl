@@ -33,9 +33,6 @@ GLuint
   trans_loc, // transformation matrix
   tex0_loc, tex1_loc;
 
-GLuint tex;
-GLuint texs[2];
-
 // data
 const float s = 0.4;
 const GLfloat vertices[] = {
@@ -65,7 +62,6 @@ const unsigned int indices[] = {
 
 // animation variables
 GLfloat count = 0.0, angle = 0.0;
-
 void init_openGL() {
 
   // set the clear color
@@ -103,6 +99,20 @@ void init_openGL() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(textures), textures, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 
+  GLuint texs[2];
+  glGenTextures(2, texs);
+
+  // // images for the texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texs[0]);
+  Texture lemon("texture/lemon.jpg");
+  lemon.load();
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, texs[1]);
+  Texture wallnut("texture/wallnut.jpeg");
+  wallnut.load();
+
   // for indices
   glGenBuffers(1, &ibuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
@@ -110,10 +120,6 @@ void init_openGL() {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
 }
-
-Texture lemon("texture/lemon.jpg");
-Texture wallnut("texture/wallnut.jpeg");
-
 
 void render() {
 
@@ -125,11 +131,11 @@ void render() {
     glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
   );
 
-  // GLfloat cos = glm::cos(angle);
-  // GLfloat sin = glm::sin(angle);
+  GLfloat cos = glm::cos(angle);
+  GLfloat sin = glm::sin(angle);
   glm::mat4 view = glm::mat4(
-    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
-    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+    glm::vec4(cos, -sin, 0.0f, 0.0f),
+    glm::vec4(sin, cos, 0.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
   );
@@ -148,17 +154,7 @@ void render() {
   glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
   glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
-  glGenTextures(2, texs);
-
-  // // images for the texture
-  glBindTexture(GL_TEXTURE_2D, texs[0]);
-  lemon.load(GL_TEXTURE0);
-  glActiveTexture(GL_TEXTURE0);
   glUniform1i(tex0_loc, 0);
-  //
-  glBindTexture(GL_TEXTURE_2D, texs[1]);
-  wallnut.load(GL_TEXTURE1);
-  glActiveTexture(GL_TEXTURE1);
   glUniform1i(tex1_loc, 1);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
@@ -183,7 +179,7 @@ void idle() {
   if (count > 1.0 || count < -1.0) {
     dir = -dir;
   }
-  angle = angle + 0.05;
+  angle = angle + 0.03;
 
 }
 

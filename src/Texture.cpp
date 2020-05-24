@@ -14,11 +14,9 @@ Texture::Texture(const char* filename) {
 
 }
 
-void Texture::load(GLenum en) {
+void Texture::load() {
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
   glGenerateMipmap(GL_TEXTURE_2D);
-
-  // glActiveTexture(en);
 
 }
