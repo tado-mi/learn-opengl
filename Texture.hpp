@@ -18,11 +18,13 @@ class Texture {
     unsigned char* data;
     const char* name;
     int w, h;
+    void load_data();
 
   public:
 
     Texture(const char* filename);
     void load();
+    void free();
 
 
 };
