@@ -34,29 +34,44 @@ GLuint
   tex0_loc, tex1_loc;
 
 // data
-const float s = 0.4;
+const float s = 0.4, pi = 2 * 3.14159;
 const GLfloat vertices[] = {
 
-  -s, -s, 0.0,
-  -s,  s, 0.0,
-   s, -s, 0.0,
-   s,  s, 0.0
+  0.0, 0.0, 0.0, // origin
+  s, 0.0, 0.0,
+  s * glm::cos(pi/5), s * glm::sin(pi/5), 0.0,
+  s * glm::cos(2 * pi/5), s * glm::sin(2 * pi/5), 0.0,
+  s * glm::cos(3 * pi/5), s * glm::sin(3 * pi/5), 0.0,
+  s * glm::cos(4 * pi/5), s * glm::sin(4 * pi/5), 0.0
 
 };
 
+const float t = 0.5;
 const GLfloat textures[] = {
 
-  0.0, 0.0,
-  1.0, 0.0,
-  0.0, 1.0,
-  1.0, 1.0
+  // 0.5, 0.5,
+  // 1.0, 0.5,
+  // 0.6, 1.0,
+  // 0.0, 0.8,
+  // 0.0, 0.2,
+  // 0.8, 0.0
+
+  0.0 + t, 0.0 + t, // origin
+  t + t, 0.0 + t,
+  t * glm::cos(pi/5) + t, t * glm::sin(pi/5) + t,
+  t * glm::cos(2 * pi/5) + t, t * glm::sin(2 * pi/5) + t,
+  t * glm::cos(3 * pi/5) + t, t * glm::sin(3 * pi/5) + t,
+  t * glm::cos(4 * pi/5) + t, t * glm::sin(4 * pi/5) + t
 
 };
 
 const unsigned int indices[] = {
 
   0, 1, 2,
-  3, 1, 2
+  0, 2, 3,
+  0, 3, 4,
+  0, 4, 5,
+  0, 5, 1
 
 };
 
@@ -123,7 +138,7 @@ void init_openGL() {
 
 void render() {
 
-  int num = 2;
+  int num = 5;
   glm::mat4 trans = glm::mat4(
     glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
     glm::vec4(0.0f, 1.0f, 0.0f, count),
@@ -139,6 +154,13 @@ void render() {
     glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
     glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
   );
+  view = glm::mat4(
+    glm::vec4(1.0f, 0.0f, 0.0f, 0.2f),
+    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+  ) * view;
+
 
   // clear all previous drawings, uses the color set by glClearColor
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -217,7 +239,7 @@ int main(int argc, char** argv) {
   glutInit(&argc, argv);
 
   glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-  glutInitWindowSize(450, 450);
+  glutInitWindowSize(650, 650);
   glutInitWindowPosition(100, 100);
   glutCreateWindow("Hello window!");
 
