@@ -27,10 +27,11 @@ GLuint
 
 // locations of variables in the shaders
 GLuint
+  proj_loc,
   vertex_loc,
+  model_loc,
   texture_loc,
   view_loc,
-  trans_loc, // transformation matrix
   tex0_loc, tex1_loc;
 
 // data
@@ -80,8 +81,9 @@ void init_openGL() {
   vertex_loc = program.get_attribute("in_vertex");
   texture_loc = program.get_attribute("in_texture");
 
-  trans_loc = program.get_uniform("trans");
+  proj_loc = program.get_uniform("proj");
   view_loc = program.get_uniform("view");
+  model_loc = program.get_uniform("model");
 
   tex0_loc = program.get_uniform("tex0");
   tex1_loc = program.get_uniform("tex1");
@@ -124,20 +126,24 @@ void init_openGL() {
 void render() {
 
   int num = 2;
-  glm::mat4 trans = glm::mat4(
-    glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
-    glm::vec4(0.0f, 1.0f, 0.0f, count),
-    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
-    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+
+  glm::mat4 proj = glm::perspective(
+    glm::radians(45.0f),
+    800.0f / 600.0f,
+    1.0f,
+    10.0f
   );
 
-  GLfloat cos = glm::cos(angle);
-  GLfloat sin = glm::sin(angle);
-  glm::mat4 view = glm::mat4(
-    glm::vec4(cos, -sin, 0.0f, 0.0f),
-    glm::vec4(sin, cos, 0.0f, 0.0f),
-    glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
-    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
+  glm::mat4 view = glm::lookAt(
+    glm::vec3(1.2f, 1.2f, 1.2f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 1.0f)
+  );
+
+  glm::mat4 model = glm::rotate(
+    glm::mat4(1.0f),
+    angle,
+    glm::vec3(0.0f, 0.0f, 1.0f)
   );
 
   // clear all previous drawings, uses the color set by glClearColor
@@ -147,8 +153,9 @@ void render() {
   glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
   glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-  glUniformMatrix4fv(trans_loc, 1, GL_FALSE, glm::value_ptr(trans));
+  glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm::value_ptr(proj));
   glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
+  glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
 
   glEnableVertexAttribArray(texture_loc);
   glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
@@ -183,32 +190,10 @@ void idle() {
 
 }
 
-void get_perspective(int w, int h) {
-
-  // 1. change the matrix mode
-  glMatrixMode(GL_PROJECTION);
-  // 2. clear all previously assigned transformations
-  glLoadIdentity();
-  // 3. create the 3D scene
-  float angle = glm::radians(60.0); // view angle from the 'camera'
-  float scale = (float) w / (float) h; // aspect ration
-  // visible space ( = calculated area ) will be max - min
-  float min = 1.0;  // near clip plane
-  float max = 10.0; // far clip plane
-  gluPerspective(angle, scale, min, max);
-
-  // back to triangle  drawing mode
-  glMatrixMode(GL_MODELVIEW);
-
-}
-
 void reshape(int w, int h) {
 
   // defines the rectangle in which OpenGL should draw
   glViewport(0, 0, w, h); // (left-bottom corner, right-top corner)
-
-  // create a perspective
-  get_perspective(w, h);
 
 }
 
