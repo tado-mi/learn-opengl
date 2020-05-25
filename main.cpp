@@ -34,30 +34,83 @@ GLuint
   view_loc,
   tex0_loc, tex1_loc;
 
+float width, height;
+
 // data
-const float s = 0.4;
+// const float s = 0.4;
+// const GLfloat vertices[] = {
+//
+//   -s, -s, 0.0,
+//   -s,  s, 0.0,
+//    s, -s, 0.0,
+//    s,  s, 0.0
+//
+// };
+//
+// const GLfloat textures[] = {
+//
+//   0.0, 0.0,
+//   1.0, 0.0,
+//   0.0, 1.0,
+//   1.0, 1.0
+//
+// };
+//
+// const unsigned int indices[] = {
+//
+//   0, 1, 2,
+//   3, 1, 2
+//
+// };
+
+// cube
+const float s = 0.4f, o = -0.1f;
 const GLfloat vertices[] = {
 
-  -s, -s, 0.0,
-  -s,  s, 0.0,
-   s, -s, 0.0,
-   s,  s, 0.0
+  o, o, o, // 0: A
+  o, o, s, // 1: A'
+  o, s, o, // 2: D
+  o, s, s, // 3: D'
+  s, o, o, // 4: B
+  s, o, s, // 5: B'
+  s, s, o, // 6: C
+  s, s, s  // 7: C'
 
 };
 
 const GLfloat textures[] = {
 
-  0.0, 0.0,
-  1.0, 0.0,
-  0.0, 1.0,
-  1.0, 1.0
+  1.0f, 0.0f, // A
+  0.0f, 0.0f, // A'
+  1.0f, 1.0f, // D
+  0.0f, 1.0f, // D'
+  1.0f, 0.0f, // B
+  0.0f, 0.0f, // B'
+  1.0f, 1.0f, // C
+  0.0f, 1.0f  // C'
 
 };
 
 const unsigned int indices[] = {
 
-  0, 1, 2,
-  3, 1, 2
+  // ADD'A'with D'A diagonal
+  3, 0, 1, // D'A A'
+  3, 0, 2, // D'A D
+  // BCC'B' with C'B diagonal
+  7, 4, 5, // C'B B'
+  7, 4, 6, // C'B C
+  // CDD'C' with DC' diagonal
+  2, 7, 6, // DC' C
+  2, 7, 3, // DC' D'
+  // ABB'A' with AB' diagonal
+  0, 5, 1, // AB' A'
+  0, 5, 4, // AB' B
+  // A'B'C'D' with D'B'diagonal
+  3, 5, 1, // D'B' A'
+  3, 5, 7, // D'B' C'
+  // ABCD with 24 DB diagonal
+  2, 4, 0, // DB A
+  2, 4, 6  // DB C
 
 };
 
@@ -107,13 +160,13 @@ void init_openGL() {
   // // images for the texture
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texs[0]);
-  Texture lemon("texture/lemon.jpg");
-  lemon.load();
+  Texture nuts("texture/nuts.jpeg");
+  nuts.load();
 
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, texs[1]);
-  Texture wallnut("texture/wallnut.jpeg");
-  wallnut.load();
+  Texture berries("texture/berries.jpeg");
+  berries.load();
 
   // for indices
   glGenBuffers(1, &ibuffer);
@@ -125,11 +178,11 @@ void init_openGL() {
 
 void render() {
 
-  int num = 2;
+  int num = 12;
 
   glm::mat4 proj = glm::perspective(
     glm::radians(45.0f),
-    800.0f / 600.0f,
+    width / height,
     1.0f,
     10.0f
   );
@@ -160,6 +213,9 @@ void render() {
   glEnableVertexAttribArray(texture_loc);
   glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
   glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
   glUniform1i(tex0_loc, 0);
   glUniform1i(tex1_loc, 1);
@@ -194,6 +250,8 @@ void reshape(int w, int h) {
 
   // defines the rectangle in which OpenGL should draw
   glViewport(0, 0, w, h); // (left-bottom corner, right-top corner)
+  width = w;
+  height = h;
 
 }
 
