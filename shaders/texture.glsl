@@ -1,7 +1,7 @@
 #version 120
 
-uniform sampler2D tex0; // lemon
-uniform sampler2D tex1; // wallnut
+uniform sampler2D tex0;
+uniform sampler2D tex1;
 
 varying float factor;
 

@@ -64,7 +64,7 @@ float width, height;
 // };
 
 // cube
-const float s = 0.4f, o = -0.1f;
+const float s = 0.2f, o = -0.2f;
 const GLfloat vertices[] = {
 
   o, o, o, // 0: A
@@ -188,7 +188,7 @@ void render() {
   );
 
   glm::mat4 view = glm::lookAt(
-    glm::vec3(1.2f, 1.2f, 1.2f),
+    glm::vec3(1.0f, 1.0f, 1.0f),
     glm::vec3(0.0f, 0.0f, 0.0f),
     glm::vec3(0.0f, 0.0f, 1.0f)
   );
@@ -196,7 +196,7 @@ void render() {
   glm::mat4 model = glm::rotate(
     glm::mat4(1.0f),
     angle,
-    glm::vec3(0.0f, 0.0f, 1.0f)
+    glm::vec3(0.0f, 1.0f, 0.0f)
   );
 
   // clear all previous drawings, uses the color set by glClearColor
@@ -242,7 +242,7 @@ void idle() {
   if (count > 1.0 || count < -1.0) {
     dir = -dir;
   }
-  angle = angle + 0.03;
+  angle = angle + 0.02;
 
 }
 
