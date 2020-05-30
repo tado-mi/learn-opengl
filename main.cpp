@@ -21,9 +21,8 @@ using namespace std;
 
 // global variables
 GLuint
-  vbuffer, // vertex buffer
-  ibuffer, // index buffer
-  tbuffer; // texture buffer
+  cube_buffer,
+  ibuffer; // texture buffer
 
 // locations of variables in the shaders
 GLuint
@@ -37,69 +36,37 @@ GLuint
 
 float width, height;
 
-// data
-// const float s = 0.4;
-// const GLfloat vertices[] = {
-//
-//   -s, -s, 0.0,
-//   -s,  s, 0.0,
-//    s, -s, 0.0,
-//    s,  s, 0.0
-//
-// };
-//
-// const GLfloat textures[] = {
-//
-//   0.0, 0.0,
-//   1.0, 0.0,
-//   0.0, 1.0,
-//   1.0, 1.0
-//
-// };
-//
-// const unsigned int indices[] = {
-//
-//   0, 1, 2,
-//   3, 1, 2
-//
-// };
-
 // cube
 const float s = 0.2f, o = -0.2f,
   s1 = 0.4f, o1 = -0.4f;
-const GLfloat vertices[] = {
+const GLfloat cube_data[] = {
 
-  // cube
-  o, o, o, // 0: A
-  o, o, s, // 1: A'
-  o, s, o, // 2: D
-  o, s, s, // 3: D'
-  s, o, o, // 4: B
-  s, o, s, // 5: B'
-  s, s, o, // 6: C
-  s, s, s,  // 7: C'
+  // poistion   color             texture
+  // 0: A
+  o, o, o,      0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+  // 1: A'
+  o, o, s,      0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+  // 2: D
+  o, s, o,      0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+  // 3: D'
+  o, s, s,      0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+  // 4: B
+  s, o, o,      0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+  // 5: B'
+  s, o, s,      0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+  // 6: C
+  s, s, o,      0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+  // 7: C'
+  s, s, s,      0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
   // floor: AA'BB' extended
-  o1, o1, o, // 8: A
-  o1, s1, o, // 9: A'
-  s1, o1, o, // 10: B
-  s1, s1, o, // 11: B'
-};
-
-const GLfloat textures[] = {
-
-  1.0f, 0.0f, // A
-  0.0f, 0.0f, // A'
-  1.0f, 1.0f, // D
-  0.0f, 1.0f, // D'
-  1.0f, 0.0f, // B
-  0.0f, 0.0f, // B'
-  1.0f, 1.0f, // C
-  0.0f, 1.0f, // C'
-  // floor
-  0.0f, 0.0f,
-  0.0f, 1.0f,
-  1.0f, 0.0f,
-  1.0f, 1.0f,
+  // 8: A
+  o1, o1, o,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+  // 9: A'
+  o1, s1, o,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+  // 10: B
+  s1, o1, o,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+  // 11: B'
+  s1, s1, o,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f
 
 };
 
@@ -130,7 +97,7 @@ const unsigned int indices[] = {
 };
 
 // animation variables
-GLfloat count = 0.0, angle = 0.0;
+GLfloat angle = 0.0;
 void init_openGL() {
 
   // set the clear color
@@ -160,22 +127,21 @@ void init_openGL() {
   // tex1_loc = program.get_uniform("tex1");
 
   // create buffers
-  // for vertices
-  glGenBuffers(1, &vbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+  glGenBuffers(1, &cube_buffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_buffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_data), cube_data, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
-  // for textures
-  glGenBuffers(1, &tbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(textures), textures, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+  // for indices
+  glGenBuffers(1, &ibuffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
   GLuint texs[2];
   glGenTextures(2, texs);
 
-  // // images for the texture
+  // images for the texture
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texs[0]);
   Texture berries("texture/berries.jpeg");
@@ -185,12 +151,6 @@ void init_openGL() {
   // glBindTexture(GL_TEXTURE_2D, texs[1]);
   // Texture floor("texture/floor.jpg");
   // floor.load();
-
-  // for indices
-  glGenBuffers(1, &ibuffer);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind
 
 }
 
@@ -222,23 +182,22 @@ void render() {
   // clear all previous drawings, uses the color set by glClearColor
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  glBindBuffer(GL_ARRAY_BUFFER, cube_buffer);
+
   glEnableVertexAttribArray(vertex_loc);
-  glBindBuffer(GL_ARRAY_BUFFER, vbuffer);
-  glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
 
   glUniformMatrix4fv(proj_loc, 1, GL_FALSE, glm::value_ptr(proj));
   glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
   glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
 
   glEnableVertexAttribArray(texture_loc);
-  glBindBuffer(GL_ARRAY_BUFFER, tbuffer);
-  glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+  glVertexAttribPointer(texture_loc, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
   glUniform1i(tex0_loc, 0);
-  // glUniform1i(tex1_loc, 1);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibuffer);
   glUniform1f(cube_loc, 1.0);
@@ -283,17 +242,12 @@ void render() {
 
 }
 
-int dir = 1;
 void idle() {
 
   glClearColor(0.0, 0.0, 0.0, 1.0); // r, g, b, alpha
   glClear(GL_COLOR_BUFFER_BIT);
 
 	glutPostRedisplay();
-  count = count + dir * 0.01;
-  if (count > 1.0 || count < -1.0) {
-    dir = -dir;
-  }
   angle = angle + 0.02;
 
 }
